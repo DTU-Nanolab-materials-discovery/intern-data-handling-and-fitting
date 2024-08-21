@@ -2,82 +2,14 @@
 from functions import *
 
 #%%
+#%% TEST 
+folder = r"O:\Nlab\Public\DCH-plasma\phosphosulfides_students\Students\Giulia\01_Characterization\layerprobe\mittma_00017\excels"
+filepath = os.path.join(folder, "mittma_00017_BL_coords.xlsx")
+new_heatmap("Layer 1 P Atomic %", filepath=filepath, title = "00017_BL", 
+#savepath = os.path.join(folder, "test.html")
+)
 #%%
 
-def new_heatmap(datatype, data=None, filepath = None, savepath=None, title=datatype):
-    "plot heatmaps with interpolated background, like in Nomad"
-
-    if filepath is not None:
-        raw_data = pd.read_excel(filepath, header=0)
-        x = raw_data["X (mm)"].values
-        y = raw_data["Y (mm)"].values
-        z = raw_data[datatype].values
-
-    if data is not None: 
-        xy = MI_to_grid(data).drop_duplicates(ignore_index=True)
-        x = xy["x"].values
-        y = xy["y"].values
-        z = data.iloc[:, data.columns.get_level_values(1)==datatype].values.flatten()
-
-    xi = np.linspace(min(x), max(x), 100)
-    yi = np.linspace(min(y), max(y), 100)
-    xi, yi = np.meshgrid(xi, yi)
-    zi = griddata((x, y), z, (xi, yi), method='linear')
-
-    scatter = go.Scatter(
-            x=x,
-            y=y,
-            mode='markers',
-            marker=dict(
-                size=15,
-                color=z,  # Set color to thickness values
-                colorscale='Viridis',  # Choose a colorscale
-                #colorbar=dict(title='Thickness (nm)'),  # Add a colorbar
-                showscale=False,  # Hide the colorbar for the scatter plot
-                line=dict(
-                    width=2,  # Set the width of the border
-                    color='DarkSlateGrey'  # Set the color of the border
-            ) ),
-        )
-    if datatype == "Layer 1 Thickness (nm)":
-        cbar_title = "Thickness (nm)"
-    elif datatype == "Layer 1 P Atomic %":
-        cbar_title = "P Atomic %"
-    elif datatype == "Layer 1 S Atomic %":
-        cbar_title = "S Atomic %"
-    elif datatype == "Layer 1 Cu Atomic %":
-        cbar_title = "Cu Atomic %"
-
-    heatmap = go.Heatmap(
-    x=xi[0],
-    y=yi[:, 0],
-    z=zi,
-    colorscale='Viridis',
-    colorbar=dict(title=cbar_title),
-    #zmin = 10, zmax = 60
-    )
-
-    fig = go.Figure(data=[heatmap, scatter])
-
-    fig.update_layout(title=title,
-    xaxis_title='X Position (mm)',
-    yaxis_title='Y Position (mm)',
-    template='plotly_white',
-    autosize =False,
-    width = 600,
-    height = 500)
-
-    if savepath.endswith(".png"):
-        fig.write_image(savepath, scale=2)
-    
-    if savepath.endswith(".html"):
-        fig.write_html(savepath)
-    
-    fig.show()
-
-#%% TEST 
-filepath = os.path.join(folder, "mittma_00017_BL_coords.xlsx")
-new_heatmap("Layer 1 P Atomic %", filepath=filepath, title = "00017_BL", savepath = os.path.join(folder, "test.html"))
 
 #%% try to plot with all quadrants
 
@@ -152,8 +84,12 @@ datatypes=["Layer 1 Thickness (nm)", "Layer 1 P Atomic %", "Layer 1 S Atomic %",
 
 for datatype in datatypes:
     savepath = os.path.join(folder, f"{sample} {datatype}.png")
-    new_heatmap(datatype, data=data, savepath=savepath, title = f"{sample} {datatype}")
-# %%
-filepath = r"O:\Nlab\Public\DCH-plasma\phosphosulfides_students\Students\Giulia\01_Characterization\layerprobe\eugbe_0002_Zr\eugbe_0002_FR_res2048_K_line.xlsx"
-new_heatmap("Layer 1 Thickness (nm)", filepath= filepath)
+    new_heatmap(datatype, data=data, title = f"{sample} {datatype}",
+     #savepath=savepath,
+     )
+# %% hot to get data info per each point (works also on interpolatd data)
+
+# get_data(data, type= all, x= all, y= all)
+get_data(data,x= -9.2,y=-5.3, type = "Layer 1 P Atomic %")
+
 # %%
