@@ -70,10 +70,10 @@ import pickle
 
 
 
-EDS_path = r"O:\Nlab\Public\DCH-plasma\phosphosulfides_students\Students\Giulia\01_Characterization\layerprobe\anait_pickles"
-#names = [12, 14,15,16,17,19         ]
-author = "anait"
-names = [1,2]
+EDS_path = r"Z:\P110143-phosphosulfides-Andrea\Students\Giulia\01_Characterization\layerprobe\mittma_pickles"
+names = [12, 14,15,16,17,19 ] # which samples to load for the plot
+author = "mittma"
+#names = [1,2]
 dfs={}
 for name in names:
     df = []
@@ -105,8 +105,8 @@ for key in dfs:
 
 df= EDS_df
 
-A= 'Layer 1 Ba Atomic %'
-B= 'Layer 1 Zr Atomic %'
+A= 'Layer 1 Cu Atomic %'
+B= 'Layer 1 P Atomic %'
 C= 'Layer 1 S Atomic %'
 datatype = "Sample ID"
 title = "All "+ f"{author}" +" samples so far"
@@ -140,8 +140,8 @@ fig = go.Figure(go.Scatterternary({
 fig.update_layout({
     'ternary': {
         'sum': 100,
-        'aaxis': {'title': 'Ba %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
-        'baxis': {'title': 'Zr %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
+        'aaxis': {'title': 'Cu %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
+        'baxis': {'title': 'P %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
         'caxis': {'title': 'S %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'}
     },
     'title': title
