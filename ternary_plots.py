@@ -7,15 +7,15 @@ data = {
     ('Point1', 'Cu %'): [30],
     ('Point1', 'P %'): [40],
     ('Point1', 'S %'): [30],
-    ('Point1', 'Intensity'): [50],
+    ('Point1', 'Intensity'): ['A'],
     ('Point2', 'Cu %'): [50],
     ('Point2', 'P %'): [20],
     ('Point2', 'S %'): [30],
-    ('Point2', 'Intensity'): [70],
+    ('Point2', 'Intensity'): ['B'],
     ('Point3', 'Cu %'): [10],
     ('Point3', 'P %'): [50],
     ('Point3', 'S %'): [40],
-    ('Point3', 'Intensity'): [90]
+    ('Point3', 'Intensity'): ['C']
 }
 
 # Creating a MultiIndex DataFrame
@@ -67,7 +67,7 @@ fig.write_image(os.path.join(savepath, "ternary_plot.png"), scale=2)
 
 #----------------------- Ternary plot with real data -----------------------#
 import pickle
-
+from functions import combine_data
 
 
 EDS_path = r"Z:\P110143-phosphosulfides-Andrea\Students\Giulia\01_Characterization\layerprobe\mittma_pickles"
@@ -150,5 +150,5 @@ fig.update_layout({
 # Show the plot
 fig.show()
 # %%
-fig.write_image(os.path.join(EDS_path, title+"_ternary.png"), scale=2)
+#fig.write_image(os.path.join(EDS_path, title+"_ternary.png"), scale=2)
 # %%

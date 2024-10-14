@@ -2,22 +2,22 @@
 from functions import *
 #%%
 sample = "mittma_00019_FR"
-folder = r"Z:\P110143-phosphosulfides-Andrea\Students\Giulia\01_Characterization\XRD\raw data"
+folder = r"Z:\P110143-phosphosulfides-Andrea\Data\Samples\mittma_0019_Cu\XRD"
 
 # %% ##############################################
 ##############################################
 
-#grid = measurement_grid(5,10,32,72,-16,-40) # mittma_00012_first50
+#grid = measurement_grid(5,10,32,72,-16,-40) # mittma_00012_first50 (2 samples)
 #grid = measurement_grid(5,5,32,32,-16,-36) # for one sample FR (mittma 00015)
 #grid = measurement_grid(5,5,32,32,-16,4) # for one sample BR (mittma 00015)
 #grid = measurement_grid(5,5,30,30,-15,-15) #5points
 #grid = measurement_grid(5,5,34,34,-17,3) # BR_map 3mm margin
-grid = measurement_grid(5,5,34,34,-17,-37) # BR_map 3mm margin
-
+#grid = measurement_grid(5,5,34,34,-17,-37) # FR_map 3mm margin
+grid = measurement_grid(5,9,40,80,-20,-40) #  2 slow scans ( 2 center points)
 
 #filename = "XRD_0003_5points.txt"
 #filename = "XRD-mittma_00012_first50.txt" 
-filename = "mittma_0019_FR_map.txt" 
+filename = "mittma_0019_R_slowscans.txt" 
 #filename = "mittma_0017_GIXRD_5points.txt"
 filename = os.path.join(folder, filename)
  # for saving the pickle and the plots
@@ -27,7 +27,7 @@ plot_grid(coords,grid)
 #%%
 datatype_y= 'Intensity, cps'
 datatype_x='2θ (°)'
-plot_data(initial_data, datatype_x, datatype_y ,plotscale = 'linear')
+plot_data(initial_data, datatype_x, datatype_y ,x=0 , y=20 , plotscale = 'log')
 #%% 
 # ---------------------- if you want to work only on a limited number of points ----------------------
 which =initial_data.keys()[0:8]
@@ -67,7 +67,7 @@ with (open(os.path.join(folder,"pickles", name), "wb")) as openfile:
 # ----------------------- load clean data, if previously processed  ---------------------
 
 name = sample + "_clean.pkl"
-with open(os.path.join(folder,"pickles", name), "rb") as openfile:
+with open(os.path.join(folder, name), "rb") as openfile:
     data_out = pickle.load(openfile)
 
 
@@ -242,7 +242,10 @@ plt.show()
 #%%
 ############################ WORK IN PROGRESS ########################################
 
-def plot_XRD_shift(data,datatype_x, datatype_y,  shift,x,y, ref_label = "Reference", title=None, savepath= False, reference = None, ): #x, y = list of points to plot]
+# plot all points or some points with a vertical shift for each point optionally with a reference and its lines
+
+def plot_XRD_shift(data,datatype_x, datatype_y,  shift,x,y, ref_label = "Reference", title=None, savepath= False, reference = None, ref_lines = False ): #x, y = list of points to plot]
+    'plot data with a vertical shift for each point optionally with a reference and its lines'
     x_data = []
     y_data = []
     labels = []
@@ -261,8 +264,9 @@ def plot_XRD_shift(data,datatype_x, datatype_y,  shift,x,y, ref_label = "Referen
         plt.plot(x_data[i], y_data[i]+ shift*i, color =colors[i], label = labels[i])
 
     if reference is not None:
-        plt.plot(reference["2theta"], reference["I"]+ shift*(-1), label= ref_label)
-        plt.vlines(reference["Peak 2theta"], shift*(-1), plt.ylim()[1], colors='k', linestyles='--', alpha=0.3)
+        plt.plot(reference["2theta"], reference["I"]*0.5+ shift*(-2), label= ref_label)
+    if ref_lines == True:
+        plt.vlines(reference["Peak 2theta"], shift*(-2), plt.ylim()[1], colors='k', linestyles='--', alpha=0.3)
 
     plt.xlabel(datatype_x)
     plt.ylabel(datatype_y)
@@ -275,7 +279,7 @@ def plot_XRD_shift(data,datatype_x, datatype_y,  shift,x,y, ref_label = "Referen
         
     plt.show()
 
-    #%%
+#%%
 
 x= [-17,-8.5,0,8.5,17]
 y1 =[-17,-17,-17,-17,-17]
@@ -285,13 +289,15 @@ y4 = [8.5,8.5,8.5,8.5,8.5]
 y5 = [17,17,17,17,17]
 y= [y1,y2,y3,y4,y5]
 plot_path = r"O:\Nlab\Public\DCH-plasma\phosphosulfides_students\Students\Giulia\01_Characterization\XRD\plots\mittma_0019"
-for pos in y:
+material = "Cu7S4"
+#for pos in y:
+fig = plt.figure(figsize=(12, 6))
     #savepath = os.path.join(plot_path, sample+"_"+str(pos[0])+".png")
-    plot_XRD_shift(data_out, '2θ (°)', 'Corrected Intensity',  shift=200, x=x, y=pos, title=sample+" y = "+str(pos[0]), savepath= False)
+plot_XRD_shift(data_out, '2θ (°)', 'Corrected Intensity',  shift=400, x=x, y=y5, title=sample+" y = "+str(pos[0]),   savepath= False)
 
 #%%
 
-ref_path = r"Z:\P110143-phosphosulfides-Andrea\Students\Giulia\01_Characterization\XRD\ref_database\reflections"
+ref_path = r"Z:\P110143-phosphosulfides-Andrea\Data\Analysis\guidal\XRD\ref_database\reflections"
 
 with open(os.path.join(ref_path, "reflections.pkl"), 'rb') as f:
     ref_peaks_df = pickle.load(f)

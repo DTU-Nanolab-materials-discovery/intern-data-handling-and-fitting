@@ -10,7 +10,7 @@ import pickle
 #%%
 
 # Directory containing the text files
-directory = r"O:\Nlab\Public\DCH-plasma\phosphosulfides_students\Students\Giulia\01_Characterization\XRD\ref_database\reflections"
+directory = r"Z:\P110143-phosphosulfides-Andrea\Data\Analysis\guidal\XRD\ref_database\reflections"
 
 # List to store the DataFrames
 dataframes = {}
@@ -37,7 +37,7 @@ for key, df in dataframes.items():
     print(f"DataFrame from file: {key}")
     print(df)
     print()
-#%%
+
 
 # dataframes.keys()
 # 'Cu2PS3', 'Cu3PS4', 'Cu4P2S7', 'Cu7PS6', 'CuPS', 'CuPS3'
@@ -47,11 +47,11 @@ for key, df in dataframes.items():
     plt.figure(figsize=(10, 2))
     plt.vlines(x=df['2theta'], ymin=0, ymax=df['I'], label=key)
     
-plt.xlabel('2θ')
-plt.ylabel('I')
-plt.title('Vertical Lines from DataFrames')
-plt.legend()
-plt.show()
+    plt.xlabel('2θ')
+    plt.ylabel('I')
+    plt.title('Vertical Lines from DataFrames')
+    plt.legend()
+    plt.show()
 
 #%%
 
@@ -74,7 +74,7 @@ def plot_with_gaussian_broadening(df, label, broadening=0.1):
     plt.ylabel('Intensity')
     plt.title(f'Calculated reflections for {label} - Gaussian broadening={broadening}')
     plt.legend()
-    #plt.savefig(savepath, dpi=300)
+    plt.savefig(savepath, dpi=300)
     plt.show()
     return new_df
 
@@ -105,7 +105,8 @@ for key, df in new_dataframes.items():
     plt.legend()
     plt.show()
     display(peaks_df[key])
-#%% rename columns for better formatting
+    
+# rename columns for better formatting
 for key, df in peaks_df.items():
     df.rename(columns={"2theta": "Peak 2theta", "I": "Peak intensity"}, inplace=True)
     display(df)
@@ -118,7 +119,7 @@ for key,df in new_dataframes.items():
 
 # %% IF MAKING A NEW DATABASE: save the peaks_df dictionary to a csv file
 for key, df in ref_df.items():
-    df.to_csv(f"XRD/reflections/ref_{key}.csv", index=False)
+    df.to_csv(os.path.join(directory, f"ref_{key}.csv"), index=False)
 
 # %%
 # load properly the dict of dataframes from csv files in the dictionary
@@ -136,4 +137,13 @@ path = os.path.join(directory, "reflections.pkl")
 with open (path, "wb") as file:
     pickle.dump(ref_peaks_df, file)
 
+# %%
+
+plt.plot(ref_peaks_df["Cu2S"]["2theta"], ref_peaks_df["Cu2S"]["I"], label="Cu2S")
+plt.plot(ref_peaks_df["Cu2S - ICSD 23596"]["2theta"], ref_peaks_df["Cu2S - ICSD 23596"]["I"]*3, label="Cu2S - ICSD 23596")
+plt.legend()
+# %%
+plt.plot(ref_peaks_df["Cu7S4"]["2theta"], ref_peaks_df["Cu7S4"]["I"],label= "Cu7S4")
+plt.plot(ref_peaks_df["Cu7S4 - ICSD 16011"]["2theta"], ref_peaks_df["Cu7S4 - ICSD 16011"]["I"]*3,label= "Cu7S4 - ICSD 16011")
+plt.legend()
 # %%

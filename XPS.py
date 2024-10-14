@@ -108,19 +108,6 @@ def read_XPS_simple(filename, grid):
 
     return data, coords
 
-#%% # --------------cut ---------------
-
-element_list = dataframe['Peak'].unique()
-    atomic_percent_list = []
-    for l in range(0, int(len(peaklist)), n):
-        for k in range(len(element_list)):
-            atomic_percent = round(sum(dataframe.iloc[l:l+n].loc[dataframe['Peak'] == element_list[k]]["Atomic %"]),3)
-            atomic_percent_list.append(atomic_percent)
-        for j in range(len(element_list)*(n-1)):
-            atomic_percent_list.append(float("NaN"))
-    atomic_percent_array = np.split(np.array(atomic_percent_list), len(atomic_percent_list)/len(element_list))
-    atomic_percent_frame = pd.DataFrame(atomic_percent_array, columns=element_list + " Total")
-    dataframe = pd.concat([dataframe, atomic_percent_frame], axis=1)
 
 #%%
 def XPS_calculate_elements(data):
