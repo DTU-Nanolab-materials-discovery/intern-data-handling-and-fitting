@@ -2,7 +2,7 @@
 import pandas as pd
 import plotly.graph_objects as go
 import numpy as np
-from functions_updated import get_data, select_points, add_info
+from functions import get_data, select_points, add_info, MI_to_grid, extract_coordinates
 
 # Example data as a MultiIndex DataFrame
 data = {
@@ -55,6 +55,7 @@ def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, ti
     C_percent = get_data(df, C).loc[0].values.flatten()
     intensity = get_data(df, intensity_label).loc[0]
     phase = get_data(df, shape_label).loc[0]
+    X,Y= extract_coordinates(df)
 
     # Create a color mapping for unique intensity values
 
@@ -67,6 +68,9 @@ def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, ti
     marker_shapes = ['circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'triangle-down', 'triangle-left', 'triangle-right']
     shape_map = {val: marker_shapes[i % len(marker_shapes)] for i, val in enumerate(unique_phases)}
     shapes = [shape_map[val] for val in phase]
+
+    custom_data = list(zip(X, Y, intensity))
+    print(custom_data)
 
     # Create the ternary plot with custom hover text, colored markers, and different shapes
     fig = go.Figure(go.Scatterternary({
@@ -86,8 +90,11 @@ def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, ti
             },
             'line': {'width': 0}
         },
-        'text': df.columns.get_level_values(0).unique(),  # Labels for the points
-        'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%<br>Coordinates: %{{text}}<br>{intensity_label}: %{{marker.color}}%',  # Custom hover text format
+        # 'text': df.columns.get_level_values(0).unique(),  # Labels for the points
+        # 'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%<br>Coordinates: %{{text}}<br>{intensity_label}: %{{marker.color}}%',  # Custom hover text format
+        'customdata': custom_data, # Add combined text for hover
+        'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%'
+                        f'<br>Coordinates: (%{{customdata[0]}}, %{{customdata[1]}})<br>{intensity_label}: %{{customdata[2]}}',  # Custom hover text format
         'name': 'Data Points',
         'showlegend': False
     }))
@@ -224,6 +231,9 @@ with open(path, 'rb') as f:
     mock_df = pickle.load(f)
 # %%
 ternary_discrete_attempt(mock_df, 'Cu', 'P', 'S', 'Sample ID','Phase', 'Ternary Phase Diagram for Cu-P-S with Intensity Coloring')
+
+
+
 # %%
 
 

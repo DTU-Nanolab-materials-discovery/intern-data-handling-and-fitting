@@ -2408,7 +2408,7 @@ def add_info(data, info_dict):
 
     return new_frame
 
-def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, title):
+def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, title, savepath=None):
     """
     Create a ternary plot with discrete colors for string intensities and different marker shapes for phases.
 
@@ -2432,6 +2432,8 @@ def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, ti
     C_percent = get_data(df, C).loc[0].values.flatten()
     intensity = get_data(df, intensity_label).loc[0]
     phase = get_data(df, shape_label).loc[0]
+    # coords = MI_to_grid(df).values
+    X,Y= extract_coordinates(df)
 
     # Create a color mapping for unique intensity values
 
@@ -2444,6 +2446,8 @@ def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, ti
     marker_shapes = ['circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'triangle-down', 'triangle-left', 'triangle-right']
     shape_map = {val: marker_shapes[i % len(marker_shapes)] for i, val in enumerate(unique_phases)}
     shapes = [shape_map[val] for val in phase]
+
+    custom_data = list(zip(X,Y, intensity, phase))
 
     # Create the ternary plot with custom hover text, colored markers, and different shapes
     fig = go.Figure(go.Scatterternary({
@@ -2461,10 +2465,15 @@ def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, ti
                 'tickvals': list(color_map.values()),  # Set tick values to the mapped color indices
                 'ticktext': unique_intensities  # Set tick text to the unique intensity values
             },
-            'line': {'width': 0}
+            'line': {'width': 1}
         },
-        'text': df.columns.get_level_values(0).unique(),  # Labels for the points
-        'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%<br>Coordinates: %{{text}}<br>{intensity_label}: %{{marker.color}}%',  # Custom hover text format
+        'customdata': custom_data,  # Store the x-coordinates in custom data
+        # 'text': coords,#df.columns.get_level_values(0).unique(),  # Labels for the points
+        # 'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%<br>Coordinates: %{{text}}<br>{intensity_label}: %{{marker.color}}%',  # Custom hover text format
+        'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%'
+                        f'<br>Coordinates: (%{{customdata[0]}}, %{{customdata[1]}})'
+                        f'<br>{intensity_label}: %{{customdata[2]}}'
+                        f'<br>{shape_label}: %{{customdata[3]}}',  # Custom hover text format
         'name': 'Data Points',
         'showlegend': False
     }))
@@ -2495,7 +2504,15 @@ def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, ti
         },
         'title': title,
         'legend': {'x': -0.1, 'y': 1}  # Position the legend on the left
-    })
+    },
+        width=800,
+        height=600, )       
+
+    if savepath:
+        if savepath.endswith(".png"):
+            fig.write_image(savepath, scale=2)
+        if savepath.endswith(".html"):
+            fig.write_html(savepath)
 
     # Show the plot
     fig.show()
