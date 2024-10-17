@@ -483,3 +483,206 @@ def get_user_input():
 get_user_input()
 
 # %%
+#%%
+import numpy as np
+import matplotlib.pyplot as plt
+import pandas as pd
+import re
+import os
+from scipy.interpolate import griddata
+from scipy.signal import find_peaks
+import seaborn as sns
+from lmfit.models import PseudoVoigtModel, SplineModel,LinearModel, GaussianModel
+from lmfit import Parameters
+from scipy.signal import savgol_filter
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+import pickle
+
+from functions import select_points, get_data, extract_coordinates
+
+folder= r"Z:\P110143-phosphosulfides-Andrea\Data\Samples\mittma_0023_Cu\XRD"
+name = "mittma_0023_FR_clean.pkl"
+with open(os.path.join(folder, name), "rb") as openfile:
+    data_out = pickle.load(openfile) 
+
+#  load refence spectra
+
+ref_path = r"Z:\P110143-phosphosulfides-Andrea\Data\Analysis\guidal\XRD\ref_database\reflections"
+
+with open(os.path.join(ref_path, "reflections.pkl"), 'rb') as f:
+    ref_peaks_df = pickle.load(f)
+#%%
+def rgba_to_hex(rgba):
+    """Convert an RGBA tuple to a hex color string."""
+    r, g, b, a = [int(c * 255) for c in rgba]
+    return f'#{r:02x}{g:02x}{b:02x}'
+
+def interactive_XRD_shift(data, datatype_x, datatype_y, shift, x, y, ref_peaks_df, ref_label="Reference", title=None, colors='rows'):
+    'interactive shifted plot for assigning phases to XRD data, specify if you want different colors per each row or a rainbow colormap'
+    fig = make_subplots(
+        rows=2, 
+        cols=1, 
+        shared_xaxes=True, 
+        row_heights=[0.8, 0.2],  # Proportion of height for each plot
+        vertical_spacing=0.02    # Adjust this to reduce space between plots
+    )
+    
+    if colors == 'rows':
+        # Define a color palette with as many colors as there are unique values in y
+        coords_colors = pd.DataFrame({'X': x, 'Y': y})
+        unique_y_values = coords_colors['Y'].unique()
+        
+        color_palette = px.colors.qualitative.Plotly[:len(unique_y_values)]
+        
+        unique_x_values = coords_colors['X'].unique()
+        color_dict = {}
+        for i, color in enumerate(color_palette):
+            # Generate lighter hues of the color for each x value
+            base_color = mcolors.to_rgb(color)
+            lighter_hues = [mcolors.to_hex((base_color[0] + (1 - base_color[0]) * (j / len(unique_x_values)),
+                                            base_color[1] + (1 - base_color[1]) * (j / len(unique_x_values)),
+                                            base_color[2] + (1 - base_color[2]) * (j / len(unique_x_values))))
+                            for j in range(len(unique_x_values))]
+            color_dict[unique_y_values[i]] = lighter_hues
+        coords_colors['Color'] = coords_colors.apply(lambda row: color_dict[row['Y']][list(unique_x_values).index(row['X'])], axis=1)
+        colors = coords_colors['Color'].values
+
+    elif colors == 'rainbow':
+        colormap = plt.get_cmap('turbo')  # You can choose any matplotlib colormap
+        colors = [rgba_to_hex(colormap(i / len(x))) for i in range(len(x))]  # Convert colors to hex
+    
+    x_data = []
+    y_data = []
+    # Store all y-data to find the global maximum
+    all_y_data = []
+    # Loop through and plot the XRD spectra with a vertical shift in the top plot
+    for i in range(len(x)):
+        x_data = get_data(data, datatype_x, x[i], y[i], False, False)
+        y_data = get_data(data, datatype_y, x[i], y[i], False, False)
+        shifted_y_data = y_data - shift * i
+        
+        all_y_data.extend(shifted_y_data)  # Collect y-data with shift for max computation
+        
+        fig.add_trace(
+            go.Scatter(
+                x=x_data,
+                y=shifted_y_data,
+                mode='lines',
+                line=dict(color=colors[i]),
+                name=f'{x[i]}, {y[i]}'
+            ),
+            row=1, col=1
+        )
+
+    # Compute the global maximum y-value, considering shifts
+    global_min_y = min(all_y_data)
+
+    # Create traces for each reference material (hidden initially)
+    ref_traces = []
+    buttons = []
+
+    for ref_material, ref_df in ref_peaks_df.items():
+        # Reference spectrum plotted in the bottom plot
+        ref_trace = go.Scatter(
+            x=ref_df["2theta"],
+            y=ref_df["I"],
+            mode='lines',
+            name=f'{ref_material} Reference',
+            visible=False
+        )
+        
+        # Create vertical peak lines for top plot (raw data plot)
+        peak_lines = go.Scatter(
+            x=[value for peak in ref_df["Peak 2theta"] for value in [peak, peak, None]],  # x: peak, peak, None to break the line
+            y=[global_min_y, 1000 * 1.1, None] * len(ref_df["Peak 2theta"]),  # y: 0 -> global_max_y for each line, with None to break lines
+            mode='lines',
+            line=dict(color='grey', dash='dot'),
+            showlegend=False,
+            visible=False
+        )
+
+        # Append traces for each reference spectrum and its peaks
+        ref_traces.append(ref_trace)
+        ref_traces.append(peak_lines)
+        
+        # Create a button for each reference
+        buttons.append(dict(
+            label=ref_material,
+            method='update',
+            args=[{'visible': [True] * len(x) + [False] * len(ref_traces)},  # Show all raw spectra, hide refs by default
+                  {'title': f'{title} - {ref_material} Reference'}]
+        ))
+
+    # Add reference traces to figure (initially hidden)
+    for trace in ref_traces:
+        # Ensure trace.name is not None before checking 'Reference' in name
+        fig.add_trace(trace, row=2 if trace.name and 'Reference' in trace.name else 1, col=1)
+
+    # Update buttons to control the visibility of one reference at a time
+    for i, button in enumerate(buttons):
+        # Make the selected reference spectrum visible in the bottom plot and its peaks visible in the top plot
+        button['args'][0]['visible'][len(x):] = [False] * len(ref_traces)  # Hide all refs initially
+        button['args'][0]['visible'][len(x) + 2 * i:len(x) + 2 * i + 2] = [True, True]  # Show selected ref and peaks
+
+    # Add the dropdown menu to switch between reference spectra
+    fig.update_layout(
+        updatemenus=[{
+            'buttons': buttons,
+            'direction': 'down',
+            'showactive': True,
+            'x': 1.05,
+            'xanchor': 'left',
+            'y': 1.1,
+            'yanchor': 'top'
+        }],
+        template='plotly_white',  # Choose a template (e.g., 'plotly_dark')
+        title=title,
+        height=600,  # Adjust the height of the figure (e.g., 700)
+        width=900,   # Adjust the width of the figure (e.g., 900)
+        legend=dict(x=1.05, y=1),
+        xaxis2_title=datatype_x,
+        yaxis_title=datatype_y
+    )
+
+    return fig
+
+# %%
+#  usage
+
+x,y = select_points(data_out, x_max=10)
+print(x, y) 
+fig= interactive_XRD_shift(data_out, '2θ (°)', 'Corrected Intensity', 400, x,y, ref_peaks_df, title= ' color test')
+fig.show()
+# %%
+x,y = extract_coordinates(data_out)
+# x,y = select_points(data_out, x_max=10)
+coords_colors = pd.DataFrame({'X': x, 'Y': y})
+
+# %%
+import plotly.express as px
+import matplotlib.colors as mcolors
+
+coords_colors = pd.DataFrame({'X': x, 'Y': y})
+unique_y_values = coords_colors['Y'].unique()
+# Define a color palette with as many colors as there are unique values in y
+color_palette = px.colors.qualitative.Plotly[:len(unique_y_values)]
+# Count the number of unique values in x
+unique_x_values = coords_colors['X'].unique()
+# Create a dictionary to store the colors for each unique value in y
+color_dict = {}
+for i, color in enumerate(color_palette):
+    # Generate lighter hues of the color
+    base_color = mcolors.to_rgb(color)
+    lighter_hues = [mcolors.to_hex((base_color[0] + (1 - base_color[0]) * (j / len(unique_x_values)),
+                                    base_color[1] + (1 - base_color[1]) * (j / len(unique_x_values)),
+                                    base_color[2] + (1 - base_color[2]) * (j / len(unique_x_values))))
+                    for j in range(len(unique_x_values))]
+    color_dict[unique_y_values[i]] = lighter_hues
+coords_colors['Color'] = coords_colors.apply(lambda row: color_dict[row['Y']][list(unique_x_values).index(row['X'])], axis=1)
+
+
+# %%
+fig= interactive_XRD_shift(data_out, '2θ (°)', 'Corrected Intensity', 400, x,y, ref_peaks_df, title= ' color test, same color= same y', colors='rainbow')
+fig.show()
+# %%
