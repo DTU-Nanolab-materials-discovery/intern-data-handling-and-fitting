@@ -230,7 +230,7 @@ path=r"Z:\P110143-phosphosulfides-Andrea\Data\Analysis\guidal\XRD\mittma_0019\mi
 with open(path, 'rb') as f:
     mock_df = pickle.load(f)
 # %%
-ternary_discrete_attempt(mock_df, 'Cu', 'P', 'S', 'Sample ID','Phase', 'Ternary Phase Diagram for Cu-P-S with Intensity Coloring')
+ternary_discrete_attempt(mock_df, 'Cu', 'P', 'S', 'Phase','Sample ID', 'Ternary Phase Diagram for Cu-P-S with Intensity Coloring')
 
 
 
@@ -315,3 +315,212 @@ get_data(FR_df,  x=-17, y=-17)
 # %%
 get_data(BR_df, x=-17, y=-17)
 # %%
+
+
+#--------------------------------- other functions that I tried, they do not work ---------------------------------
+def ternary_plot_v01(df, el1, el2, el3, datatype, title, savepath=None):
+    """Make a ternary plot of the data in df, with el1, el2, el3 as the corners, and colorscale based on datatype."""
+
+    A = f'Layer 1 {el1} Atomic %'
+    B = f'Layer 1 {el2} Atomic %'
+    C = f'Layer 1 {el3} Atomic %'
+
+    A_percent = df.xs(A, level='Data type', axis=1).values.flatten()
+    B_percent = df.xs(B, level='Data type', axis=1).values.flatten()
+    C_percent = df.xs(C, level='Data type', axis=1).values.flatten()
+    intensity = df.xs(datatype, level='Data type', axis=1).values.flatten()
+    coordinates = MI_to_grid(df).values  # df.columns.get_level_values(0)[::7].values.flatten() also works, but gives a lot of decimals
+
+    fig = go.Figure()
+
+    if pd.api.types.is_numeric_dtype(intensity):
+        marker = {
+            'symbol': 100,
+            'size': 8,
+            'color': intensity,  # Use intensity for marker color
+            'colorscale': 'Turbo',  # Choose a colorscale
+            'colorbar': {'title': datatype},  # Add a colorbar
+            'line': {'width': 2}
+        }
+    else:
+        unique_intensities = list(set(intensity))
+        color_map = {val: i for i, val in enumerate(unique_intensities)}
+        colors = [color_map[val] for val in intensity]
+        marker = {
+            'symbol': 100,
+            'size': 8,
+            'color': colors,  # Use mapped colors for marker color
+            'colorscale': 'Viridis',  # Choose a discrete colorscale
+            'colorbar': {'title': datatype, 'tickvals': list(color_map.values()), 'ticktext': unique_intensities},  # Add a colorbar with discrete values
+            'line': {'width': 2}
+        }
+
+    fig.add_trace(go.Scatterternary({
+        'mode': 'markers',
+        'a': A_percent,  # el1 percentages
+        'b': B_percent,  # el2 percentages
+        'c': C_percent,  # el3 percentages
+        'marker': marker,
+        'text': coordinates,
+        'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%<br>{datatype}: %{{marker.color:.1f}}<br>Coordinates:%{{text:str}}',  # Custom hover text format
+        'showlegend': False
+    }))
+
+    # Update layout
+    fig.update_layout({
+        'ternary': {
+            'sum': 100,
+            'aaxis': {'title': f'{el1} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
+            'baxis': {'title': f'{el2} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
+            'caxis': {'title': f'{el3} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'}
+        },
+        'title': title},
+        width=800,
+        height=600,
+    )
+    if savepath:
+        if savepath.endswith(".png"):
+            fig.write_image(savepath, scale=2)
+        if savepath.endswith(".html"):
+            fig.write_html(savepath)
+
+    # Show the plot
+    fig.show()
+
+# %%
+# version 1 ( version0 in functions.py)
+def ternary_plot_v1(dfs, el1, el2, el3, datatype, title, savepath=None):
+    """
+    Make a ternary plot of the data in dfs, with el1, el2, el3 as the corners, and colorscale based on datatype.
+    dfs is a dictionary where keys are labels and values are dataframes.
+    """
+    fig = go.Figure()
+    markers = ['circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'triangle-down', 'triangle-left', 'triangle-right']
+    
+    for i, (label, df) in enumerate(dfs.items()):
+        A = f'Layer 1 {el1} Atomic %'
+        B = f'Layer 1 {el2} Atomic %'
+        C = f'Layer 1 {el3} Atomic %'
+
+        A_percent = df.xs(A, level='Data type', axis=1).values.flatten()
+        B_percent = df.xs(B, level='Data type', axis=1).values.flatten()
+        C_percent = df.xs(C, level='Data type', axis=1).values.flatten()
+        try:
+            intensity = df.xs(datatype, level='Data type', axis=1).values.flatten()
+        except KeyError:
+            intensity = 5
+            markers[i] = 100
+            
+        X,Y = extract_coordinates(df)
+
+        fig.add_trace(go.Scatterternary({
+            'mode': 'markers',
+            'a': A_percent,   # el1 percentages
+            'b': B_percent,   # el2 percentages
+            'c': C_percent,   # el3 percentages
+            'marker': {
+                'symbol': markers[i % len(markers)],  # Use different marker for each dataframe
+                'size': 8,
+                'color': intensity,  # Use intensity for marker color
+                'colorscale': 'Turbo',  # Choose a colorscale
+                'colorbar': {'title': datatype},  # Add a colorbar
+                'line': None  # Remove the outside border
+            },
+            'text': [f'{x}, {y}' for x, y in zip(X, Y)],  # Add coordinates as text
+            #'text': f'{X}, {Y}',  # Add coordinates as text
+            'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%<br>{datatype}: %{{marker.color:.1f}}<br>Coordinates:%{{text:str}}',  # Custom hover text format
+            'name': label,
+            'showlegend': True
+        }))
+
+    # Update layout
+    fig.update_layout({
+        'ternary': {
+            'sum': 100,
+            'aaxis': {'title': f'{el1} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
+            'baxis': {'title': f'{el2} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
+            'caxis': {'title': f'{el3} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'}
+        },
+        'title': title,
+        'legend': {'title': 'Dataframes', 'x': 0.1, 'y': 1}  # Move legend to the left side
+    },
+        width=800,
+        height=600, 
+    )       
+    if savepath:
+        if savepath.endswith(".png"):
+            fig.write_image(savepath, scale=2)
+        if savepath.endswith(".html"):
+            fig.write_html(savepath)
+
+    # Show the plot
+    fig.show()
+
+# %%
+# version 2
+def ternary_plot_v2(dfs, el1, el2, el3, datatype, title, savepath=None):
+    """
+    Make a ternary plot of the data in dfs, with el1, el2, el3 as the corners, and colorscale based on datatype.
+    dfs is a dictionary where keys are labels and values are dataframes.
+    """
+    fig = go.Figure()
+    markers = ['circle', 'square', 'diamond', 'cross', 'x', 'triangle-up', 'triangle-down', 'triangle-left', 'triangle-right']
+    
+    for i, (label, df) in enumerate(dfs.items()):
+        A = f'Layer 1 {el1} Atomic %'
+        B = f'Layer 1 {el2} Atomic %'
+        C = f'Layer 1 {el3} Atomic %'
+
+        A_percent = df.xs(A, level='Data type', axis=1).values.flatten()
+        B_percent = df.xs(B, level='Data type', axis=1).values.flatten()
+        C_percent = df.xs(C, level='Data type', axis=1).values.flatten()
+        try:
+            intensity = df.xs(datatype, level='Data type', axis=1).values.flatten()
+        except KeyError:
+            intensity = -1
+            markers[i] = 100
+            
+        X,Y = extract_coordinates(df)
+
+        fig.add_trace(go.Scatterternary({
+            'mode': 'markers',
+            'a': A_percent,   # el1 percentages
+            'b': B_percent,   # el2 percentages
+            'c': C_percent,   # el3 percentages
+            'marker': {
+                'symbol': markers[i % len(markers)],  # Use different marker for each dataframe
+                'size': 8,
+                'color': intensity,  # Use intensity for marker color
+                'colorscale': 'Turbo',  # Choose a colorscale
+                'colorbar': {'title': datatype} if i == 0 else None,  # Add a colorbar only for the first trace
+                'showscale': i == 0,  # Show the colorbar only for the first trace
+                'line': None  # Remove the outside border
+            },
+            'text': [f'{x}, {y}' for x, y in zip(X, Y)],  # Add coordinates as text
+            'hovertemplate': f'{el1}: %{{a:.1f}}%<br>{el2}: %{{b:.1f}}%<br>{el3}: %{{c:.1f}}%<br>{datatype}: %{{marker.color:.1f}}<br>Coordinates:%{{text:str}}',  # Custom hover text format
+            'name': label,
+            'showlegend': True
+        }))
+
+    # Update layout
+    fig.update_layout({
+        'ternary': {
+            'sum': 100,
+            'aaxis': {'title': f'{el1} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
+            'baxis': {'title': f'{el2} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
+            'caxis': {'title': f'{el3} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'}
+        },
+        'title': title,
+        'legend': {'title': 'Dataframes', 'x': 0.1, 'y': 1}  # Move legend to the left side
+    },
+        width=800,
+        height=600, 
+    )       
+    if savepath:
+        if savepath.endswith(".png"):
+            fig.write_image(savepath, scale=2)
+        if savepath.endswith(".html"):
+            fig.write_html(savepath)
+
+    # Show the plot
+    fig.show()
