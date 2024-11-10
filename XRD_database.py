@@ -57,10 +57,9 @@ for key, df in dataframes.items():
 
 # Define a function to plot with Gaussian broadening for a specific dataframe
 def plot_with_gaussian_broadening(df, label, broadening=0.1):
-    # plt.figure(figsize=(10, 2))
+    plt.figure(figsize=(10, 2))
     savepath = os.path.join(directory, 'plots_with_broadening', f'XRD_ref-{label}.png')
     # Define the range for the x-axis
-    #x_range = np.linspace(0, df['2theta'].max(), 1000)
     x_range = np.linspace(20,80, 1000)
     y_broad = np.zeros_like(x_range)
     
@@ -68,14 +67,14 @@ def plot_with_gaussian_broadening(df, label, broadening=0.1):
         y_broad += row['I'] * norm.pdf(x_range, row['2theta'], broadening)
     
     new_df = pd.DataFrame({'2theta': x_range, 'I': y_broad})
-    # plt.plot(x_range, y_broad, label=label)
-    # #plt.xlim(20,80)
-    # plt.xlabel('2θ')
-    # plt.ylabel('Intensity')
-    # plt.title(f'Calculated reflections for {label} - Gaussian broadening={broadening}')
-    # plt.legend()
-    # plt.savefig(savepath, dpi=300)
-    # plt.show()
+    plt.plot(x_range, y_broad, label=label)
+    #plt.xlim(20,80)
+    plt.xlabel('2θ')
+    plt.ylabel('Intensity')
+    plt.title(f'Calculated reflections for {label} - Gaussian broadening={broadening}')
+    plt.legend()
+    plt.savefig(savepath, dpi=300)
+    plt.show()
     return new_df
 
 # Example usage with the specific dataframe

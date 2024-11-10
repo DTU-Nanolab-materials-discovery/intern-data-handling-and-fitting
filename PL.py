@@ -6,10 +6,10 @@ import plotly.graph_objects as go
 import os
 
 
-folder= r"Z:\P110143-phosphosulfides-Andrea\Data\Samples\mittma_0011_Cu\PL mapper"
-deposition = 'mittma_0011_Cu'
-sample = 'mittma_0011_br'
-square = 'BR'
+folder= r"Z:\P110143-phosphosulfides-Andrea\Data\Samples\mittma_0015_Cu\PL mapper"
+deposition = 'mittma_0015_Cu'
+sample = 'mittma_0015_cu_fl'
+square = 'FL'
 plots_path= folder+'\\plots_'+square
 
 os.makedirs(plots_path, exist_ok=True)
@@ -95,7 +95,7 @@ for column in data_spectral.columns[1:]:
         bad_data[column] = data_spectral[column]
         good_data.drop(column, axis=1, inplace=True)
         
-    elif wl_max < 700:
+    elif wl_max <= 680:
         bad_data[column] = data_spectral[column]
         good_data.drop(column, axis=1, inplace=True)
 
@@ -164,8 +164,7 @@ def plot_scatter_plots(data_df):
 
     # Sort the DataFrame by 'X' and 'Y' columns
     data_df = data_df.sort_values(by=['X', 'Y'], key=lambda col: col.astype(float))
-
-
+    x_plot, y_plot= data_df['X'], data_df['Y']
     # Iterate over each column except 'X' and 'Y'
     for column in data_df.columns:
         if column not in ['X', 'Y']:
@@ -183,9 +182,10 @@ def plot_scatter_plots(data_df):
             fig.show()
             # Save the figure as an HTML file
             # pio.write_html(fig, file=f'scatter_plot_{column}.html', auto_open=False)
-
+            
+    return x_plot, y_plot
 # Plot the scatter plots
-plot_scatter_plots(data_df)
+x_plot,y_plot= plot_scatter_plots(data_df)
 
 #%%
 
@@ -201,6 +201,24 @@ for column in bad_data.columns[1:]:
     # print(column)
     xx.append(float(column.split(', ')[0]))
     yy.append(float(column.split(', ')[1]))
+
+#%% the integrated data file often has less points than the full data file. 
+# check which points are missing in the integrated data file, and elimitate them from the good and bad data files,
+# to avoid plotting crosses and circles on empty points
+
+exclude=[]
+for x, y in zip(xx, yy):
+    if not ((x in x_plot.values) and (y in y_plot.values)):
+        exclude.append([x, y])
+        xx.remove(x)
+        yy.remove(y)
+for x, y in zip(XX, YY):
+    if not ((x in x_plot.values) and (y in y_plot.values)):
+        exclude.append([x, y])
+        XX.remove(x)
+        YY.remove(y)
+
+print("Excluded points:", exclude)
 
 #%%
 
