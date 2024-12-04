@@ -845,6 +845,11 @@ def load_data(filepath, separator = "\t"):
     dataframe.columns.rename(["Coordinate", "Data type"], level=[0, 1], inplace = True)
     return dataframe
 
+def export_specific(data, type, x, y, path): 
+    'export a specific point in XY format in a .txt file'
+    data_exp = get_data(data, type=type, x=x, y=y)
+    data_exp.to_csv(path, sep='\t', index=False, header=False)
+    display(data_exp)
 ##########################
 # Functions related to EDX analysis, layerprobe
 ##########################
