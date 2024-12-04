@@ -1787,24 +1787,7 @@ def CRAIC_map(folder, background, reflection_name, transmission_name, grid, unit
 
 def plot_XRD_shift_subplots(data, datatype_x, datatype_y, x, y_list, shift, title, material_guess, nrows, ncols, figsize=(12, 10), save=True):
     """
-    Plots XRD shift for multiple y-coordinates in subplots.
-
-    Parameters:
-    - data: DataFrame containing the data
-    - datatype_x: str, type of data for x-axis
-    - datatype_y: str, type of data for y-axis
-    - x: list, list of x-coordinates
-    - y_list: list of lists, each sublist contains y-coordinates for a subplot
-    - shift: float, value by which to shift the y-axis data
-    - title: str, title of the entire figure
-    - ref_lines: array, reference lines to be plotted
-    - nrows: int, number of rows of subplots
-    - ncols: int, number of columns of subplots
-    - figsize: tuple, size of the figure
-    - save: bool, whether to save the figure as a file
-
-    Returns:
-    - plots the XRD data for multiple y-coordinates in subplots
+    Plots XRD shift for multiple y-coordinates in subplots. 
     """
     with open (os.path.join("XRD", "reflections", "reflections.pkl"), "rb") as file:
         ref_peaks_df = pickle.load(file)
@@ -1844,7 +1827,7 @@ def plot_XRD_shift_subplots(data, datatype_x, datatype_y, x, y_list, shift, titl
     plt.show()
 
 
-def plot_XRD_shift(data,datatype_x, datatype_y,  shift,x,y, title=None, savepath= False): #x, y = list of points to plot]
+def plot_XRD_shift(data,datatype_x, datatype_y,  shift,x,y, title=None, savepath= False, show=True): #x, y = list of points to plot]
     x_data = []
     y_data = []
     labels = []
@@ -1868,8 +1851,9 @@ def plot_XRD_shift(data,datatype_x, datatype_y,  shift,x,y, title=None, savepath
     if savepath:
         path = os.path.join('plots', title + 'shift.png')
         plt.savefig(path, dpi=120, bbox_inches='tight')
-        
-    plt.show()
+    
+    if show==True:
+              plt.show()
 
 def fit_two_related_peaks(x, y):
 
@@ -2529,18 +2513,18 @@ def ternary_discrete_attempt(df, el1, el2, el3, intensity_label, shape_label, ti
         }))
 
     # Update layout
-    fig.update_layout({
-        'ternary': {
-            'sum': 100,
-            'aaxis': {'title': f'{el1} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
-            'baxis': {'title': f'{el2} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'},
-            'caxis': {'title': f'{el3} %', 'min': 0, 'linewidth': 2, 'ticks': 'outside'}
-        },
-        'title': title,
-        'legend': {'x': -0.1, 'y': 1}  # Position the legend on the left
-    },
+    fig.update_layout(
+        ternary=dict(
+            sum=100,
+            aaxis=dict(title=f'{el1} %', min=0, linewidth=2, ticks='outside', titlefont=dict(size=20), tickfont=dict(size=16)),
+            baxis=dict(title=f'{el2} %', min=0, linewidth=2, ticks='outside', titlefont=dict(size=20), tickfont=dict(size=16)),
+            caxis=dict(title=f'{el3} %', min=0, linewidth=2, ticks='outside', titlefont=dict(size=20), tickfont=dict(size=16))
+        ),
+        title=dict(text=title, font=dict(size=24)),
+        legend=dict(x=-0.1, y=1, font=dict(size=18)),
         width=800,
-        height=600, )       
+        height=600
+    )
 
     if savepath:
         if savepath.endswith(".png"):
