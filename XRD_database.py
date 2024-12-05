@@ -96,7 +96,7 @@ peaks_df = {}
 for key, df in new_dataframes.items():
     peaks, _ = find_peaks(df["I"], height=30, prominence=10, width=0.1)
     #sort and only use 8 highest peaks
-    peaks = peaks[np.argsort(df.iloc[peaks]["I"])[::-1][:9]]
+    peaks = peaks[np.argsort(df.iloc[peaks]["I"])[::-1][:9]] # use the strongest 9 peaks
     #store the peaks in a dataframe
     peaks_df[key] = df.iloc[peaks].reset_index(drop=True)
     plt.plot(df["2theta"], df["I"], label=key)
@@ -138,6 +138,11 @@ with open (path, "wb") as file:
 
 # %%
 
+
+
+
+
+#%%
 plt.plot(ref_peaks_df["Cu2S"]["2theta"], ref_peaks_df["Cu2S"]["I"], label="Cu2S")
 plt.plot(ref_peaks_df["Cu2S - ICSD 23596"]["2theta"], ref_peaks_df["Cu2S - ICSD 23596"]["I"]*3, label="Cu2S - ICSD 23596")
 plt.legend()

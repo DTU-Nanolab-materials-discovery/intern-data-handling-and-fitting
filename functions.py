@@ -2796,7 +2796,9 @@ def read_CRAIC(file_path, header_lines=10, print_header= True):
             print(line)
     return data
 
-def CRAIC_map(folder, background, reflection_name, transmission_name, grid, unit= "nm", with_plots=True, savepath=None):
+def CRAIC_map(folder, background, reflection_name, transmission_name, grid, thickness, unit= "nm", with_plots=True, savepath=None):
+    """ Reads data in order and assigns them to the grid points, then calculates absorption coefficient and returns the dataframe with the data.
+    Plots R, T and alpjha if with_plots is True. Uses average thickness that needs to be inputed."""
     # x axis is taken from the background file, maybe check that it is always the same
     data = pd.DataFrame()
     npoints = len(grid)
@@ -2825,7 +2827,9 @@ def CRAIC_map(folder, background, reflection_name, transmission_name, grid, unit
 
         data_R["Intensity"] = data_R["Intensity"] - background["Intensity"]
         #calculate absorption coefficient
-        data_A = -(np.log(data_T["Intensity"]/(100-data_R["Intensity"])))*10**5 
+        ## here I use an average thickness, 
+        ## future implementation might want to use the thickness map from EDX
+        data_A = -(np.log(data_T["Intensity"]/(100-data_R["Intensity"])))/thickness
 
         if with_plots == True:
             ax[0].plot(x_axis, data_R["Intensity"], label=f" {i}") 
