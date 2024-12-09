@@ -823,7 +823,49 @@ def get_data(data, type = 'all', x = 'all', y = 'all', printinfo = True, drop_na
             if drop_nan == True:
                 data = data.dropna(axis = 0, how = 'all').fillna('-')
             return data.xs(coords, axis=1)[type]
-        
+
+def add_missing_columns(df, data_types_to_check, fill_value=0):
+    """
+    Ensures all coordinates in a MultiIndex DataFrame have the specified set of data types.
+    Adds missing columns (data types) and fills them with the specified fill value (default is 0).
+    Handles duplicate columns by deduplicating them.
+
+    Parameters:
+    - df (pd.DataFrame): The DataFrame with a MultiIndex on columns (Coordinate, Data type).
+    - data_types_to_check (list of str): List of data types (columns) to ensure exist for each coordinate.
+    - fill_value (int, float, optional): The value to use for filling missing columns. Default is 0.
+
+    Returns:
+    - pd.DataFrame: The updated DataFrame with missing columns added.
+    """
+    # Ensure the DataFrame has a MultiIndex for columns
+    if not isinstance(df.columns, pd.MultiIndex):
+        raise ValueError("The DataFrame must have a MultiIndex for columns.")
+    
+    # Step 1: Deduplicate the MultiIndex
+    if not df.columns.is_unique:
+        df.columns = pd.MultiIndex.from_tuples(
+            [(col[0], f"{col[1]}_{i}") if df.columns.tolist().count(col) > 1 else col
+             for i, col in enumerate(df.columns)]
+        )
+        print("Duplicate columns were found and renamed.")
+
+    # Step 2: Identify all unique coordinates
+    all_coordinates = df.columns.get_level_values('Coordinate').unique()
+
+    # Step 3: Add missing data types for each coordinate and fill with the specified value
+    for coord in all_coordinates:
+        existing_data_types = df[coord].columns
+        missing_data_types = [dtype for dtype in data_types_to_check if dtype not in existing_data_types]
+
+        for missing_type in missing_data_types:
+            df[(coord, missing_type)] = fill_value  # Add missing columns with fill_value
+
+    # Re-sort the columns for better readability
+    df = df.sort_index(axis=1)
+    
+    return df
+
 def translate_data(data, x, y):
     '''"Move a set of datapoints by a given x and y offset. Useful when combining multiple samples into one dataframe."'''
     coords = MI_to_grid(data)
@@ -2610,7 +2652,7 @@ def ternary_plot(df, el1, el2, el3, datatype, title, savepath = None):
     C_percent = get_data(df, C).loc[0].values.flatten()
     intensity = get_data(df, datatype).loc[0]
     X,Y= extract_coordinates(df)
-    
+  
     custom_data = list(zip(X,Y, intensity))
 
     fig = go.Figure()
